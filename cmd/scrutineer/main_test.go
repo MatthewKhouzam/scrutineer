@@ -172,3 +172,21 @@ func TestSelectRunner_localCodexBackend(t *testing.T) {
 		t.Fatal("expected error when codex backend used without Docker")
 	}
 }
+
+func TestSelectRunner_localGeminiBackend(t *testing.T) {
+	// With noDocker=true and backend=gemini, selectRunner returns the native GeminiRunner.
+	f := &flags{
+		addr:      "127.0.0.1:8080",
+		backend:   "gemini",
+		noDocker:  true,
+		cloneMode: "shallow",
+		set:       map[string]bool{},
+	}
+	runner, _, err := selectRunner(slog.New(slog.NewTextHandler(io.Discard, nil)), f, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := runner.(worker.GeminiRunner); !ok {
+		t.Fatalf("runner type = %T, want GeminiRunner", runner)
+	}
+}

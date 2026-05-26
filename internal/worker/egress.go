@@ -29,6 +29,7 @@ const HostGatewayAlias = "host.docker.internal"
 var DefaultEgressAllow = []string{
 	// model
 	"*.anthropic.com",
+	"generativelanguage.googleapis.com",
 
 	// scrutineer skill API on the host
 	HostGatewayAlias,

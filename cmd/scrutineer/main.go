@@ -78,7 +78,7 @@ func parseFlags() *flags {
 	flag.StringVar(&f.addr, "addr", "127.0.0.1:8080", "listen address")
 	flag.StringVar(&f.dataDir, "data", "./data", "data directory (db + workspaces)")
 	flag.StringVar(&f.effort, "effort", "high", "claude effort")
-	flag.StringVar(&f.backend, "backend", "", "LLM backend: anthropic (default), codex, or opencode")
+	flag.StringVar(&f.backend, "backend", "", "LLM backend: anthropic (default), codex, opencode, or gemini")
 	flag.BoolVar(&f.noDocker, "no-docker", false, "disable containerised runner even if docker is available")
 	flag.StringVar(&f.runnerImage, "runner-image", worker.DefaultRunnerImage, "docker image for per-job containers")
 	flag.StringVar(&f.skillsRepo, "skills-repo", "", "clone skills from this git https URL on startup")
@@ -309,6 +309,12 @@ func run(log *slog.Logger) error {
 
 func selectRunner(log *slog.Logger, f *flags, egressExtra []string) (worker.SkillRunner, string, error) { //nolint:ireturn // factory function
 	apiBase := "http://" + f.addr + "/api"
+
+	// Gemini uses a native Go runner (go-genai SDK), no Docker needed.
+	if f.backend == "gemini" {
+		log.Info("using native gemini runner")
+		return worker.GeminiRunner{FullClone: f.fullClone(), MaxTurns: f.maxTurns}, apiBase, nil
+	}
 
 	// Map backend flag to harness name for DockerRunner.
 	harness := "claude"

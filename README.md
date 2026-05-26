@@ -189,7 +189,7 @@ When the docker runner is active, scrutineer starts an authenticated egress prox
 | `-scan-timeout` | `1h` | Wall-clock limit per scan; exceeded scans fail |
 | `-max-turns` | `0` | Passed as `--max-turns` to claude-code (0 = unlimited) |
 | `-schema-strict` | `false` | Fail a scan when its `report.json` does not validate against the skill's `schema.json` (default: warn in the scan log and parse anyway) |
-| `-backend` | `anthropic` | Backend to use: `anthropic`, `openai`, `codex`, or `opencode` |
+| `-backend` | `anthropic` | Backend to use: `anthropic`, `codex`, `opencode`, or `gemini` |
 | `-anthropic-base-url` | - | Custom Anthropic API base URL (env: `ANTHROPIC_BASE_URL`) |
 
 ## Config file
@@ -205,30 +205,10 @@ The config file can also replace the model pick list and pin the default model:
       - name: Opus
         id:   claude-opus-4-7
 
-## OpenAI-compatible backend (Ollama, etc.)
-
-Scrutineer can use any OpenAI-compatible API instead of Anthropic. This is useful for running against local models via [Ollama](https://ollama.com). You need a model that supports tool calling (e.g. `functiongemma`):
-
-    ollama pull functiongemma:270m
-    export OPENAI_API_KEY=unused
-    export OPENAI_BASE_URL=http://localhost:11434/v1
-    go run ./cmd/scrutineer -skills ./skills -backend openai
-
-Or configure it in `scrutineer.yaml`:
-
-    backend: openai
-    default_model: functiongemma:270m
-    models:
-      - name: Function Gemma 3
-        id: functiongemma:270m
-
-The `OPENAI_API_KEY` env var is optional. When unset, requests are sent without an Authorization header, which is fine for local servers like Ollama that don't check it.
-
 ## Codex backend (OpenAI's coding agent)
 
-Scrutineer can use [OpenAI Codex](https://github.com/openai/codex) as the harness instead of claude-code. The codex backend communicates with the codex app-server via the [codex-sdk-go](https://pkg.go.dev/github.com/pmenglund/codex-sdk-go) library over JSON-RPC:
+Scrutineer can use [OpenAI Codex](https://github.com/openai/codex) as the harness instead of claude-code. The codex CLI must be installed in the runner image. Docker is required.
 
-    npm install -g @openai/codex
     export OPENAI_API_KEY=sk-...
     go run ./cmd/scrutineer -skills ./skills -backend codex
 
@@ -237,21 +217,33 @@ Or in `scrutineer.yaml`:
     backend: codex
     default_model: codex-mini-latest
 
-The codex backend requires the `codex` CLI on PATH (the SDK spawns `codex app-server` as a subprocess) and a valid `OPENAI_API_KEY`. Each scan starts a thread with full-auto approval and runs the skill prompt as a single turn.
+Each scan runs `codex exec` inside the container with the skill prompt.
 
 ## Opencode backend
 
-Scrutineer can use [opencode](https://opencode.ai) as the agent harness. The opencode backend communicates with a running opencode server via the [opencode-sdk-go](https://pkg.go.dev/github.com/sst/opencode-sdk-go) library:
+Scrutineer can use [opencode](https://opencode.ai) as the agent harness. The opencode CLI must be installed in the runner image. Docker is required.
 
-    opencode  # start the opencode server
-    export OPENCODE_BASE_URL=http://localhost:54321  # default
     go run ./cmd/scrutineer -skills ./skills -backend opencode
 
 Or in `scrutineer.yaml`:
 
     backend: opencode
 
-The opencode backend requires a running opencode server. Each scan creates a session, sends the skill prompt, and collects the text response.
+Each scan runs `opencode run` inside the container with the skill prompt.
+
+## Gemini backend
+
+Scrutineer can use [Google Gemini](https://ai.google.dev/) as the agent backend. The gemini backend calls the Gemini API directly via the [go-genai](https://github.com/googleapis/go-genai) SDK with function calling — no CLI installation required. It works with or without Docker.
+
+    export GEMINI_API_KEY=...
+    go run ./cmd/scrutineer -skills ./skills -backend gemini
+
+Or in `scrutineer.yaml`:
+
+    backend: gemini
+    default_model: gemini-2.5-pro
+
+Each scan creates a conversation with tool use (read_file, write_file, list_directory, run_command, web_fetch) and loops until the model finishes or hits the max-turns limit.
 
 ## Security
 

@@ -33,8 +33,9 @@ type Config struct {
 	RunnerImage  string   `yaml:"runner_image"`
 	// Backend selects the LLM execution backend: "anthropic" (default,
 	// shells out to the claude CLI), "codex" (OpenAI Codex CLI inside the
-	// container), or "opencode" (opencode CLI inside the container). All
-	// backends run inside DockerRunner when Docker is available.
+	// container), "opencode" (opencode CLI inside the container), or
+	// "gemini" (calls the Gemini API directly via go-genai). Codex and
+	// opencode require Docker; anthropic and gemini work without it.
 	Backend string `yaml:"backend"`
 	// EgressAllow extends the docker runner's egress proxy allowlist with
 	// extra hostnames. Entries are appended to worker.DefaultEgressAllow,
@@ -122,10 +123,10 @@ func ValidateTheme(s string) error {
 // Empty is valid (caller keeps the default "anthropic").
 func ValidateBackend(s string) error {
 	switch s {
-	case "", "claude-code", "anthropic", "codex", "opencode":
+	case "", "claude-code", "anthropic", "codex", "opencode", "gemini":
 		return nil
 	default:
-		return fmt.Errorf("backend: must be \"anthropic\", \"codex\", or \"opencode\", got %q", s)
+		return fmt.Errorf("backend: must be \"anthropic\", \"codex\", \"opencode\", or \"gemini\", got %q", s)
 	}
 }
 

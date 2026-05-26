@@ -129,6 +129,9 @@ func (d DockerRunner) RunSkill(ctx context.Context, sj SkillJob, emit func(Event
 	if os.Getenv("OPENAI_API_KEY") != "" {
 		dockerArgs = append(dockerArgs, "-e", "OPENAI_API_KEY")
 	}
+	if os.Getenv("GEMINI_API_KEY") != "" {
+		dockerArgs = append(dockerArgs, "-e", "GEMINI_API_KEY")
+	}
 	dockerArgs = append(dockerArgs, d.image())
 	dockerArgs = append(dockerArgs, entrypoint...)
 
