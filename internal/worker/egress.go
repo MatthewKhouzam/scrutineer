@@ -30,6 +30,7 @@ var DefaultEgressAllow = []string{
 	// model
 	"*.anthropic.com",
 	"generativelanguage.googleapis.com",
+	"*.githubcopilot.com",
 
 	// scrutineer skill API on the host
 	HostGatewayAlias,

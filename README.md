@@ -189,7 +189,7 @@ When the docker runner is active, scrutineer starts an authenticated egress prox
 | `-scan-timeout` | `1h` | Wall-clock limit per scan; exceeded scans fail |
 | `-max-turns` | `0` | Passed as `--max-turns` to claude-code (0 = unlimited) |
 | `-schema-strict` | `false` | Fail a scan when its `report.json` does not validate against the skill's `schema.json` (default: warn in the scan log and parse anyway) |
-| `-backend` | `anthropic` | Backend to use: `anthropic`, `codex`, `opencode`, or `gemini` |
+| `-backend` | `anthropic` | Backend to use: `anthropic`, `codex`, `opencode`, `gemini`, or `copilot` |
 | `-anthropic-base-url` | - | Custom Anthropic API base URL (env: `ANTHROPIC_BASE_URL`) |
 
 ## Config file
@@ -244,6 +244,19 @@ Or in `scrutineer.yaml`:
     default_model: gemini-2.5-pro
 
 Each scan creates a conversation with tool use (read_file, write_file, list_directory, run_command, web_fetch) and loops until the model finishes or hits the max-turns limit.
+
+## Copilot backend
+
+Scrutineer can use [GitHub Copilot](https://github.com/features/copilot) as the agent backend. The copilot backend communicates with the Copilot CLI via the [copilot-sdk-go](https://github.com/github/copilot-sdk/go) library — no separate CLI installation required (the SDK spawns it). It works with or without Docker.
+
+    go run ./cmd/scrutineer -skills ./skills -backend copilot
+
+Or in `scrutineer.yaml`:
+
+    backend: copilot
+    default_model: gpt-4.1
+
+Authentication uses your existing GitHub login (`gh auth login`). Each scan creates a session with full-auto permissions, sends the skill prompt, and waits for the agent to finish.
 
 ## Security
 
